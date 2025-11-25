@@ -16,9 +16,9 @@ st.markdown("""
     }
     
     .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 1200px;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        max-width: 1400px;
     }
     
     h1, h2, h3 {
@@ -34,7 +34,7 @@ st.markdown("""
     
     /* Reduce spacing between elements */
     div[data-testid="stVerticalBlock"] > div {
-        margin-bottom: -15px;
+        margin-bottom: -10px;
     }
     
     .stExpander {
@@ -42,31 +42,77 @@ st.markdown("""
         border-radius: 6px;
         background-color: #FAFAFA;
     }
+    
+    /* Scrollable Resources Panel */
+    .resources-panel {
+        height: calc(100vh - 200px);
+        overflow-y: auto;
+        padding-right: 10px;
+        border-left: 1px solid #E0E0E0;
+        padding-left: 15px;
+    }
+    
+    /* Header Styling */
+    .header-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .app-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+        margin-left: 10px;
+    }
+    
+    /* Logo Button Styling */
+    button[kind="secondary"] {
+        border: none;
+        background: transparent;
+        padding: 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # Initialize CourseManager
 course_manager = CourseManager()
 
-st.title("Syllaber")
-st.caption("Course Syllabus Generator")
+# --- Header & Logo ---
+# Using columns to place logo in top LEFT
+h_col1, h_col2 = st.columns([1, 5])
 
-# Sidebar for configuration and course management
-with st.sidebar:
-    st.header("Configuration")
+with h_col1:
+    # SVG Logo
+    logo_svg = """
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4A90E2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 17L12 22L22 17" stroke="#4A90E2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 12L12 17L22 12" stroke="#4A90E2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    """
     
-    # Load key from Key.txt
-    api_key = ""
-    if os.path.exists("Key.txt"):
-        with open("Key.txt", "r") as f:
-            api_key = f.read().strip()
+    if st.button("ℹ️ Syllaber", help="Click for Instructions"):
+        @st.dialog("About Syllaber")
+        def show_instructions():
+            st.markdown("""
+            ### Welcome to Syllaber!
             
-    if not api_key:
-        st.error("API Key not found! Please create a 'Key.txt' file with your Gemini API key in the project root.")
-    else:
-        st.success("API Key loaded from Key.txt")
-    
-    st.markdown("---")
+            **Syllaber** helps you create course syllabi from PDF textbooks and web resources.
+            
+            #### How to use:
+            1.  **Create/Select a Course** from the sidebar.
+            2.  **Upload PDFs** in the *Resources* panel (right).
+            3.  **Add Web Links** if needed.
+            4.  **Enter Instructions** in the *Generation* panel (center).
+            5.  Click **Generate Syllabus**.
+            
+            The agent will analyze all your resources and produce a structured syllabus in English and Italian, along with a topic mapping.
+            """)
+        show_instructions()
+
+# Sidebar for course management only (Config hidden)
+with st.sidebar:
     st.header("Course Management")
     
     # Create New Course
@@ -92,103 +138,121 @@ with st.sidebar:
             st.success(f"Deleted course '{selected_course}'")
             st.rerun()
 
+# Load key silently
+api_key = ""
+if os.path.exists("Key.txt"):
+    with open("Key.txt", "r") as f:
+        api_key = f.read().strip()
+
 if selected_course and api_key:
-    st.header(f"Managing: {selected_course}")
+    # Header for Course
+    # st.header(f"Managing: {selected_course}") # Removed to save space/cleaner look
     
     # Get current content
     content = course_manager.get_course_content(selected_course)
     
-    # --- Resources Section ---
-    with st.expander("📂 PDF Documents", expanded=True):
-        uploaded_files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True, label_visibility="collapsed")
-        if uploaded_files:
-            for uploaded_file in uploaded_files:
-                course_manager.add_pdf(selected_course, uploaded_file, uploaded_file.name)
-            st.success(f"Uploaded {len(uploaded_files)} files.")
-            st.rerun()
-            
-        if content['pdf_files']:
-            st.markdown("**Current PDFs:**")
-            for pdf in content['pdf_files']:
-                st.text(f"📄 {pdf}")
-        else:
-            st.info("No PDFs uploaded yet.")
+    # Create Layout: 60% Center (Generation), 40% Right (Files)
+    col_gen, col_files = st.columns([3, 2])
+    
+    # --- Right Column: File Management ---
+    with col_files:
+        # Custom header with aggressive negative margin to pull next element up
+        st.markdown("<h3 style='margin-bottom: -20px; margin-top: 0px; z-index: 1; position: relative;'>📂 Resources</h3>", unsafe_allow_html=True)
+        
+        # Start Scrollable Container
+        st.markdown('<div class="resources-panel">', unsafe_allow_html=True)
+        
+        with st.expander("PDF Documents", expanded=True):
+            uploaded_files = st.file_uploader("Upload PDFs", type="pdf", accept_multiple_files=True, label_visibility="collapsed")
+            if uploaded_files:
+                for uploaded_file in uploaded_files:
+                    course_manager.add_pdf(selected_course, uploaded_file, uploaded_file.name)
+                st.success(f"Uploaded {len(uploaded_files)} files.")
+                st.rerun()
+                
+            if content['pdf_files']:
+                st.markdown("**Current PDFs:**")
+                for pdf in content['pdf_files']:
+                    st.text(f"📄 {pdf}")
+            else:
+                st.info("No PDFs uploaded yet.")
 
-    with st.expander("🔗 Web Resources", expanded=True):
-        c1, c2, c3 = st.columns([3, 3, 1])
-        with c1:
+        with st.expander("Web Resources", expanded=True):
             link_url = st.text_input("URL", placeholder="https://example.com")
-        with c2:
             link_desc = st.text_input("Description", placeholder="Resource Title")
-        with c3:
-            st.write("") # Spacer
-            st.write("") # Spacer
-            if st.button("Add"):
+            
+            if st.button("Add Link"):
                 if link_url and link_desc:
                     course_manager.add_link(selected_course, link_url, link_desc)
                     st.success("Added!")
                     st.rerun()
+            
+            if content['links']:
+                st.markdown("**Current Links:**")
+                for link in content['links']:
+                    st.markdown(f"- [{link['description']}]({link['url']})")
+            else:
+                st.info("No web links added yet.")
         
-        if content['links']:
-            st.markdown("**Current Links:**")
-            for link in content['links']:
-                st.markdown(f"- [{link['description']}]({link['url']})")
-        else:
-            st.info("No web links added yet.")
+        # End Scrollable Container
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    
-    # --- Generation Section ---
-    st.subheader("Generation Settings")
-    additional_instructions = st.text_area("Additional Instructions (Optional)", placeholder="e.g., Focus on practical examples, make it 8 weeks long, etc.")
-    
-    if st.button("Generate Syllabus"):
-        # 1. Aggregate Text from all PDFs
-        all_text = ""
-        pdf_dir = os.path.join(course_manager.root_dir, selected_course, "pdfs")
+    # --- Center Column: Generation Prompt ---
+    with col_gen:
+        st.subheader(f"✨ {selected_course}")
         
-        with st.spinner("Extracting text from all PDFs..."):
-            for pdf_file in content['pdf_files']:
-                file_path = os.path.join(pdf_dir, pdf_file)
-                text = extract_text_from_pdf(file_path)
-                all_text += f"\n--- Source: {pdf_file} ---\n{text}\n"
+        additional_instructions = st.text_area(
+            "Instructions for the Agent", 
+            height=150,
+            placeholder="Describe how you want the syllabus to be structured. E.g., 'Focus on practical labs', 'Make it 8 weeks long', 'Include a section on ethics'."
+        )
         
-        st.info(f"Total extracted text length: {len(all_text)} characters.")
-        
-        # 2. Format Web Resources
-        web_resources_text = ""
-        for link in content['links']:
-            web_resources_text += f"- {link['description']}: {link['url']}\n"
+        if st.button("Generate Syllabus", type="primary"):
+            # 1. Aggregate Text from all PDFs
+            all_text = ""
+            pdf_dir = os.path.join(course_manager.root_dir, selected_course, "pdfs")
             
-        # 3. Generate Content
-        # Generate English Syllabus
-        with st.spinner("Generating English Syllabus..."):
-            syllabus_en = generate_syllabus(all_text, web_resources_text, additional_instructions, api_key, language='en')
-        
-        # Generate Italian Syllabus
-        with st.spinner("Generating Italian Syllabus..."):
-            syllabus_it = generate_syllabus(all_text, web_resources_text, additional_instructions, api_key, language='it')
+            with st.spinner("Extracting text from all PDFs..."):
+                for pdf_file in content['pdf_files']:
+                    file_path = os.path.join(pdf_dir, pdf_file)
+                    text = extract_text_from_pdf(file_path)
+                    all_text += f"\n--- Source: {pdf_file} ---\n{text}\n"
             
-        # Generate Topic Mapping
-        with st.spinner("Generating Topic Mapping..."):
-            topic_mapping = generate_topic_mapping(all_text, api_key)
+            st.info(f"Total extracted text length: {len(all_text)} characters.")
             
-        # Display Results
-        res_col1, res_col2 = st.columns(2)
-        
-        with res_col1:
-            st.subheader("English Syllabus")
-            st.markdown(syllabus_en)
-            st.download_button("Download English Syllabus", syllabus_en, file_name=f"{selected_course}_syllabus_en.md")
+            # 2. Format Web Resources
+            web_resources_text = ""
+            for link in content['links']:
+                web_resources_text += f"- {link['description']}: {link['url']}\n"
+                
+            # 3. Generate Content
+            # Generate English Syllabus
+            with st.spinner("Generating English Syllabus..."):
+                syllabus_en = generate_syllabus(all_text, web_resources_text, additional_instructions, api_key, language='en')
             
-        with res_col2:
-            st.subheader("Italian Syllabus")
-            st.markdown(syllabus_it)
-            st.download_button("Download Italian Syllabus", syllabus_it, file_name=f"{selected_course}_syllabus_it.md")
+            # Generate Italian Syllabus
+            with st.spinner("Generating Italian Syllabus..."):
+                syllabus_it = generate_syllabus(all_text, web_resources_text, additional_instructions, api_key, language='it')
+                
+            # Generate Topic Mapping
+            with st.spinner("Generating Topic Mapping..."):
+                topic_mapping = generate_topic_mapping(all_text, api_key)
+                
+            # Display Results
+            st.markdown("---")
+            res_tabs = st.tabs(["English Syllabus", "Italian Syllabus", "Topic Mapping"])
             
-        st.subheader("Topic Mapping")
-        st.markdown(topic_mapping)
-        st.download_button("Download Topic Mapping", topic_mapping, file_name=f"{selected_course}_topic_mapping.md")
+            with res_tabs[0]:
+                st.markdown(syllabus_en)
+                st.download_button("Download English Syllabus", syllabus_en, file_name=f"{selected_course}_syllabus_en.md")
+                
+            with res_tabs[1]:
+                st.markdown(syllabus_it)
+                st.download_button("Download Italian Syllabus", syllabus_it, file_name=f"{selected_course}_syllabus_it.md")
+                
+            with res_tabs[2]:
+                st.markdown(topic_mapping)
+                st.download_button("Download Topic Mapping", topic_mapping, file_name=f"{selected_course}_topic_mapping.md")
 
 elif not selected_course:
     st.info("Please create or select a course from the sidebar.")
