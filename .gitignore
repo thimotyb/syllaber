@@ -1,0 +1,6 @@
+Key.txt
+courses/
+data/
+__pycache__/
+*.pyc
+.DS_Store
