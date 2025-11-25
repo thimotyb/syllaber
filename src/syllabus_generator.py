@@ -16,7 +16,8 @@ def generate_syllabus(text, web_resources_text, additional_instructions, api_key
         str: Generated syllabus in Markdown format.
     """
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # Use a model that is definitely available
+    model = genai.GenerativeModel('gemini-2.0-flash')
     
     lang_instruction = "English" if language == 'en' else "Italian"
     
@@ -26,7 +27,7 @@ def generate_syllabus(text, web_resources_text, additional_instructions, api_key
     
     Follow this structure:
     1. **Learning Intent**: A short section describing the goal of the course.
-    2. **Program Blocks**: 4-6 cohesive blocks. Each block must have:
+    2. **Program Modules**: 4-6 cohesive modules. Each module must have:
         - **Theory**: Theoretical anchors.
         - **Organization**: Organizational levers.
         - **Labs**: A placeholder line for Google Cloud labs (e.g., "Lab: [Relevant Lab Title]").
@@ -63,7 +64,7 @@ def generate_topic_mapping(text, api_key):
         str: Generated topic mapping in Markdown format.
     """
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     
     prompt = f"""
     Based on the following text, create a 'Topic Mapping' document.

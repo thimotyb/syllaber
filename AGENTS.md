@@ -8,8 +8,8 @@ This guide describes how to reuse this workspace to build new syllabi sourced fr
 - If you need structured snippets, send `ps2ascii` output into helper files (e.g., `ps2ascii file.pdf > notes.txt`) so that you can annotate topic ideas before drafting the syllabus.
 
 ## 2. Organizing the Syllabus Content
-- Draft distinct syllabus files for each language. Follow the pattern established by `modelops_syllabus_en.md` and `modelops_syllabus_it.md`: a short learning intent section, concise program blocks, and closing expectations.
-- Keep every block uniform: theoretical anchors, organizational levers, and a Google Cloud labs line. This makes it easy to swap topics while preserving the course rhythm.
+- Draft distinct syllabus files for each language. Follow the pattern established by `modelops_syllabus_en.md` and `modelops_syllabus_it.md`: a short learning intent section, concise program modules, and closing expectations.
+- Keep every module uniform: theoretical anchors, organizational levers, and a Google Cloud labs line. This makes it easy to swap topics while preserving the course rhythm.
 - Use ASCII only (no em dashes) unless the source documents already demand different characters.
 - Deliver all course assets as Markdown (`.md`) files instead of `.txt` so they can be rendered directly without conversion.
 - Keep lab or reference URLs out of the syllabus files; list only titles there and move all links into `topic_mapping.md`.
